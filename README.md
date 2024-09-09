@@ -1,87 +1,72 @@
-# 得意先管理アプリケーション
+# Next.js + Prisma + PostgreSQL プロジェクト
 
-このプロジェクトは、Next.js、Prisma ORM、PostgreSQL を使用した得意先管理アプリケーションです。
+このプロジェクトは、Next.js、Prisma ORM、PostgreSQL を使用した Web アプリケーションです。
 
-## 始め方
+## セットアップ
 
-1. 依存関係をインストールします：
+1. リポジトリをクローンします。
 
-```bash
-npm install
-```
+2. 依存関係をインストールします：
 
-2. PostgreSQL データベースをセットアップし、`.env`ファイルの`DATABASE_URL`を更新します。
+   ```bash
+   npm install
+   ```
 
-3. Prisma マイグレーションを実行します：
+3. `.env`ファイルを作成し、必要な環境変数を設定します：
 
-```bash
-npx prisma migrate dev
-```
+   ```
+   DATABASE_URL="postgresql://user:password@db:5432/mydb?schema=public"
+   ```
 
-4. 開発サーバーを起動します：
+4. Docker Compose でアプリケーションを起動します：
+   ```bash
+   docker-compose up --build
+   ```
 
-```bash
-npm run dev
-```
+アプリケーションは http://localhost:3000 で利用可能になります。
 
-[http://localhost:3000](http://localhost:3000)をブラウザで開いて結果を確認してください。
+## 新しいモデルの追加手順
 
-## Prisma スキーマと API のセットアップ
+1. Prisma スキーマの更新:
+   `prisma/schema.prisma`ファイルを開き、新しいモデルを追加します。例：
 
-### 1. Prisma スキーマの定義
+   ```prisma
+   model Example {
+     id        Int      @id @default(autoincrement())
+     name      String
+     createdAt DateTime @default(now())
+     updatedAt DateTime @updatedAt
+   }
+   ```
 
-`prisma/schema.prisma`ファイルでデータモデルを定義します：
+2. マイグレーションの作成と適用:
+   Docker コンテナ内で以下のコマンドを実行します：
 
-```prisma
-model Customer {
-  id                Int      @id @default(autoincrement())
-  name              String
-  prefecture        String
-  address           String
-  phoneNumber       String
-  faxNumber         String?
-  isShippingStopped Boolean  @default(false)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-}
-```
+   ```bash
+   docker-compose exec frontend npx prisma migrate dev --name add_example_model
+   ```
 
-### 2. マイグレーションの実行
+3. Prisma Client の再生成:
 
-スキーマを定義または更新した後、マイグレーションを実行します：
+   ```bash
+   docker-compose exec frontend npx prisma generate
+   ```
 
-```bash
-npx prisma migrate dev --name init
-```
+4. API ルートの作成:
+   `app/api/examples/route.ts`ファイルを作成し、基本的な CRUD 操作を実装します。
 
-### 3. Prisma Client の生成
+5. フロントエンドの更新:
+   新しいモデルを使用するようにフロントエンドコンポーネントを更新します。
 
-データベースとやり取りするための Prisma Client を生成します：
+6. アプリケーションの再起動:
+   ```bash
+   docker-compose down
+   docker-compose up --build
+   ```
 
-```bash
-npx prisma generate
-```
+## 開発
 
-### 4. API エンドポイントの作成
+- コードを変更すると、Next.js の開発サーバーが自動的に更新されます。
+- データベーススキーマを変更した場合は、マイグレーションを実行してください。
 
-`app/api`ディレクトリに API ルートを作成します。例えば、`app/api/customers/route.ts`：
-
-```typescript
-import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
-
-export async function GET() {
-  const customers = await prisma.customer.findMany();
-  return NextResponse.json(customers);
-}
-
-export async function POST(request: Request) {
-  const body = await request.json();
-  const customer = await prisma.customer.create({ data: body });
-  return NextResponse.json(customer);
-}
-```
-
-これにより、得意先の一覧取得と新規作成のエンドポイントが作成されます。
+##
