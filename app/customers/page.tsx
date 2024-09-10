@@ -5,21 +5,12 @@ import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import CustomerList from "@/presentation/customer/CustomerList";
-
-export interface ICustomerQuery {
-  prefecture?: string;
-  isShippingStopped?: boolean;
-}
+import { ICustomerQuery } from "@/domain/customer/ICustomerQuery";
 
 const schema = yup
   .object({
-    prefecture: yup.string().max(20, "都道府県は20文字以内で入力してください"),
-    isShippingStopped: yup
-      .boolean()
-      .nullable()
-      .transform((value, originalValue) =>
-        originalValue === "" ? null : value
-      ),
+    prefectureCd: yup.string(),
+    isShippingStopped: yup.boolean(),
   })
   .required();
 
@@ -35,7 +26,7 @@ export default function CustomersPage() {
 
   const fetchCustomers = async (query: ICustomerQuery = {}) => {
     const params = new URLSearchParams();
-    if (query.prefecture) params.append("prefecture", query.prefecture);
+    if (query.prefectureCd) params.append("prefectureCd", query.prefectureCd);
     if (
       query.isShippingStopped !== undefined &&
       query.isShippingStopped !== null
@@ -62,18 +53,18 @@ export default function CustomersPage() {
       <form onSubmit={handleSubmit(onSubmit)} className="mb-4">
         <div className="flex gap-4">
           <div>
-            <label htmlFor="prefecture" className="block mb-2">
+            <label htmlFor="prefectureCd" className="block mb-2">
               都道府県
             </label>
             <input
-              {...register("prefecture")}
-              id="prefecture"
+              {...register("prefectureCd")}
+              id="prefectureCd"
               type="text"
               className="border rounded px-2 py-1"
             />
-            {errors.prefecture && (
+            {errors.prefectureCd && (
               <p className="text-red-500 text-sm mt-1">
-                {errors.prefecture.message}
+                {errors.prefectureCd.message}
               </p>
             )}
           </div>

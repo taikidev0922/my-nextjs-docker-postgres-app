@@ -1,5 +1,8 @@
 FROM node:18-alpine AS base
 
+# Install Git
+RUN apk add --no-cache git
+
 # Install dependencies only when needed
 FROM base AS deps
 # Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
@@ -20,9 +23,17 @@ FROM base AS dev
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+
+RUN chown -R node:node /app
+
+# Generate Prisma client and run migrations
 RUN npx prisma generate
 
+# Git configuration
+RUN git config --global user.email "taiki.dev0922@gmail.com" \
+    && git config --global user.name "taikidev0922"
 
+USER node
 
 # Rebuild the source code only when needed
 FROM base AS builder
@@ -48,18 +59,11 @@ WORKDIR /app
 # Uncomment the following line in case you want to disable telemetry during runtime.
 ENV NEXT_TELEMETRY_DISABLED 1
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+USER node
 
 COPY --from=builder /app/public ./public
-
-# Automatically leverage output traces to reduce image size
-# https://nextjs.org/docs/advanced-features/output-file-tracing
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
-
-USER nextjs
-
+COPY --from=builder --chown=node:node /app/.next/standalone ./
+COPY --from=builder --chown=node:node /app/.next/static ./.next/static
+COPY --from=builder --chown=node:node /app/node_modules/.prisma ./node_modules/.prisma
 
 CMD ["node", "server.js"]

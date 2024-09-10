@@ -1,4 +1,4 @@
 export interface ICustomerQuery {
-  prefecture?: string;
+  prefectureCd?: string;
   isShippingStopped?: boolean;
 }

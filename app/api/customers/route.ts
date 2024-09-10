@@ -7,13 +7,13 @@ const prisma = new PrismaClient();
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const prefecture = searchParams.get("prefecture");
+    const prefectureCd = searchParams.get("prefectureCd");
     const isShippingStopped = searchParams.get("isShippingStopped");
 
     const whereClause: ICustomerQuery = {};
 
-    if (prefecture) {
-      whereClause.prefecture = prefecture;
+    if (prefectureCd) {
+      whereClause.prefectureCd = prefectureCd;
     }
 
     if (isShippingStopped !== null) {
@@ -66,7 +66,7 @@ export async function PUT(request: Request) {
         where: { id: customer.id },
         data: {
           name: customer.name,
-          prefecture: customer.prefecture,
+          prefectureCd: customer.prefectureCd,
           address: customer.address,
           phoneNumber: customer.phoneNumber,
           faxNumber: customer.faxNumber,

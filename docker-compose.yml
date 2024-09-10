@@ -11,6 +11,7 @@ services:
       - NODE_ENV=development
       - WATCHPACK_POLLING=true
       - DATABASE_URL=postgresql://user:password@db:5432/mydb?schema=public
+    user: node
     volumes:
       - .:/app
       - /app/node_modules

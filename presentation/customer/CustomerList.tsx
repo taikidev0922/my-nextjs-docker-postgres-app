@@ -3,7 +3,7 @@ import React from "react";
 type Customer = {
   id: number;
   name: string;
-  prefecture: string;
+  prefectureCd: string;
   address: string;
   phoneNumber: string;
   faxNumber: string | null;
@@ -34,7 +34,7 @@ const CustomerList: React.FC<CustomerListProps> = ({ customers }) => {
             <tr key={customer.id}>
               <td className="py-2 px-4 border">{customer.id}</td>
               <td className="py-2 px-4 border">{customer.name}</td>
-              <td className="py-2 px-4 border">{customer.prefecture}</td>
+              <td className="py-2 px-4 border">{customer.prefectureCd}</td>
               <td className="py-2 px-4 border">{customer.address}</td>
               <td className="py-2 px-4 border">{customer.phoneNumber}</td>
               <td className="py-2 px-4 border">{customer.faxNumber || "-"}</td>

@@ -2,7 +2,7 @@
 CREATE TABLE "Customer" (
     "id" SERIAL NOT NULL,
     "name" TEXT NOT NULL,
-    "prefecture" TEXT NOT NULL,
+    "prefectureCd" TEXT NOT NULL,
     "address" TEXT NOT NULL,
     "phoneNumber" TEXT NOT NULL,
     "faxNumber" TEXT,
