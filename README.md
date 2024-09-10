@@ -61,7 +61,7 @@
 6. アプリケーションの再起動:
    ```bash
    docker-compose down
-   docker-compose up --build
+   docker-compose up -d
    ```
 
 ## 開発

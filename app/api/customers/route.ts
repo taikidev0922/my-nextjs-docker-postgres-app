@@ -1,11 +1,29 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
+import { ICustomerQuery } from "@/domain/customer/ICustomerQuery";
 
 const prisma = new PrismaClient();
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const customers = await prisma.customer.findMany();
+    const { searchParams } = new URL(request.url);
+    const prefecture = searchParams.get("prefecture");
+    const isShippingStopped = searchParams.get("isShippingStopped");
+
+    const whereClause: ICustomerQuery = {};
+
+    if (prefecture) {
+      whereClause.prefecture = prefecture;
+    }
+
+    if (isShippingStopped !== null) {
+      whereClause.isShippingStopped = isShippingStopped === "true";
+    }
+
+    const customers = await prisma.customer.findMany({
+      where: whereClause,
+    });
+
     return NextResponse.json(customers);
   } catch (error) {
     console.error("Error fetching customers:", error);
@@ -25,6 +43,43 @@ export async function POST(request: Request) {
     return NextResponse.json(customer);
   } catch (error) {
     console.error("Error creating customer:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PUT(request: Request) {
+  try {
+    const body = await request.json();
+
+    if (!Array.isArray(body)) {
+      return NextResponse.json(
+        { error: "Invalid input: expected an array of customers" },
+        { status: 400 }
+      );
+    }
+
+    const updatePromises = body.map((customer) =>
+      prisma.customer.update({
+        where: { id: customer.id },
+        data: {
+          name: customer.name,
+          prefecture: customer.prefecture,
+          address: customer.address,
+          phoneNumber: customer.phoneNumber,
+          faxNumber: customer.faxNumber,
+          isShippingStopped: customer.isShippingStopped,
+        },
+      })
+    );
+
+    const updatedCustomers = await prisma.$transaction(updatePromises);
+
+    return NextResponse.json(updatedCustomers);
+  } catch (error) {
+    console.error("Error updating customers:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 }
