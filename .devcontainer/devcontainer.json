@@ -8,7 +8,9 @@
       "extensions": [
         "dbaeumer.vscode-eslint",
         "esbenp.prettier-vscode",
-        "prisma.prisma"
+        "prisma.prisma",
+        "github.copilot",
+        "bradlc.vscode-tailwindcss"
       ]
     }
   },
