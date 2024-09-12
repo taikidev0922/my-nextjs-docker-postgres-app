@@ -39,73 +39,34 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          echo "Building Docker image..."
+          echo "Building and pushing Docker image..."
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-          if [ $? -ne 0 ]; then
-            echo "Docker build failed"
-            exit 1
-          fi
-
-          echo "Pushing image to ECR..."
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          if [ $? -ne 0 ]; then
-            echo "Failed to push image to ECR"
-            exit 1
-          fi
-
-          echo "Tagging image as latest..."
           docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-          if [ $? -ne 0 ]; then
-            echo "Failed to push latest tag"
-            exit 1
-          fi
-
           echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
           echo "Image built and pushed successfully: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
 
       - name: Update ECS task definition
+        id: update-task-definition
         run: |
-          echo "Fetching current task definition..."
           TASK_DEFINITION=$(aws ecs describe-task-definition --task-definition ${{ env.ECS_TASK_DEFINITION }} --query 'taskDefinition' --output json)
-          if [ $? -ne 0 ]; then
-            echo "Failed to fetch task definition"
-            exit 1
-          fi
-
-          echo "Updating task definition with new image..."
-          NEW_TASK_DEFINITION=$(echo $TASK_DEFINITION | jq '.containerDefinitions[0].image = "${{ steps.build-image.outputs.image }}"')
-          NEW_TASK_DEFINITION=$(echo $NEW_TASK_DEFINITION | jq 'del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)')
+          NEW_TASK_DEFINITION=$(echo $TASK_DEFINITION | jq '.containerDefinitions[0].image = "${{ steps.build-image.outputs.image }}"' | jq 'del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)')
           echo "$NEW_TASK_DEFINITION" > task-definition.json
-
-          echo "Registering new task definition..."
           NEW_TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json file://task-definition.json --query 'taskDefinition.taskDefinitionArn' --output text)
-          if [ $? -ne 0 ]; then
-            echo "Failed to register new task definition"
-            exit 1
-          fi
-          echo "New task definition registered: $NEW_TASK_DEF_ARN"
           echo "task_definition_arn=$NEW_TASK_DEF_ARN" >> $GITHUB_OUTPUT
+          echo "New task definition registered: $NEW_TASK_DEF_ARN"
 
       - name: Update ECS service
         run: |
-          echo "Updating ECS service..."
           aws ecs update-service --cluster ${{ env.ECS_CLUSTER }} \
-                                  --service ${{ env.ECS_SERVICE }} \
-                                  --task-definition ${{ steps.update-task-definition.outputs.task_definition_arn }} \
-                                  --force-new-deployment
-          if [ $? -ne 0 ]; then
-            echo "Failed to update ECS service"
-            exit 1
-          fi
-          echo "ECS service updated successfully"
+                                 --service ${{ env.ECS_SERVICE }} \
+                                 --task-definition ${{ steps.update-task-definition.outputs.task_definition_arn }} \
+                                 --force-new-deployment
+          echo "ECS service update initiated"
 
       - name: Wait for service stability
         run: |
           echo "Waiting for ECS service to stabilize..."
           aws ecs wait services-stable --cluster ${{ env.ECS_CLUSTER }} --services ${{ env.ECS_SERVICE }}
-          if [ $? -ne 0 ]; then
-            echo "ECS service failed to stabilize"
-            exit 1
-          fi
           echo "ECS service is now stable"
