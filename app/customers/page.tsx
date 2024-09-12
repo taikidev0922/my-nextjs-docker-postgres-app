@@ -86,7 +86,7 @@ export default function CustomersPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-4">得意先一覧</h1>
+      <h1 className="text-2xl font-bold mb-4">得意先一覧2</h1>
 
       <form onSubmit={handleSubmit(onSubmit)} className="mb-4">
         <div className="flex gap-4">
