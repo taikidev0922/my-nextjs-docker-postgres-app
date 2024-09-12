@@ -46,6 +46,44 @@ export default function CustomersPage() {
     fetchCustomers(data);
   };
 
+  const generateRandomCustomer = () => {
+    const prefectures = ["東京都", "大阪府", "愛知県", "北海道", "福岡県"];
+    const names = ["株式会社A", "有限会社B", "C商事", "D工業", "Eストア"];
+
+    return {
+      name: names[Math.floor(Math.random() * names.length)],
+      prefectureCd: prefectures[Math.floor(Math.random() * prefectures.length)],
+      address: `${Math.floor(Math.random() * 100)}番地`,
+      phoneNumber: `0${Math.floor(Math.random() * 90000000 + 10000000)}`,
+      faxNumber:
+        Math.random() > 0.5
+          ? `0${Math.floor(Math.random() * 90000000 + 10000000)}`
+          : undefined,
+      isShippingStopped: Math.random() > 0.8,
+    };
+  };
+
+  const addRandomCustomer = async () => {
+    const newCustomer = generateRandomCustomer();
+    try {
+      const response = await fetch("/api/customers", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newCustomer),
+      });
+
+      if (response.ok) {
+        fetchCustomers();
+      } else {
+        console.error("Failed to add random customer");
+      }
+    } catch (error) {
+      console.error("Error adding random customer:", error);
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-4">得意先一覧</h1>
@@ -97,6 +135,13 @@ export default function CustomersPage() {
           </div>
         </div>
       </form>
+
+      <button
+        onClick={addRandomCustomer}
+        className="bg-green-500 text-white px-4 py-2 rounded mb-4"
+      >
+        ランダムに得意先を追加
+      </button>
 
       <CustomerList customers={customers} />
     </div>
