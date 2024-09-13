@@ -21,7 +21,10 @@ export async function GET(request: Request) {
     }
 
     const customers = await prisma.customer.findMany({
-      where: whereClause,
+      where: {
+        isShippingStopped: whereClause.isShippingStopped ?? undefined,
+        prefectureCd: whereClause.prefectureCd ?? undefined,
+      },
     });
 
     return NextResponse.json(customers);
