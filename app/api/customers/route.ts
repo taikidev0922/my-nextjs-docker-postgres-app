@@ -1,30 +1,46 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Prisma } from "@prisma/client";
 import { ICustomerQuery } from "@/domain/customer/ICustomerQuery";
 
 const prisma = new PrismaClient();
 
+function parseBoolean(value: string | null): boolean | undefined {
+  if (value === "true") return true;
+  if (value === "false") return false;
+  return undefined;
+}
+
+function buildWhereClause(query: ICustomerQuery): Prisma.CustomerWhereInput {
+  const whereClause: Prisma.CustomerWhereInput = {};
+
+  if (query.name) whereClause.name = { contains: query.name };
+  if (query.prefectureCd) whereClause.prefectureCd = query.prefectureCd;
+  if (query.address) whereClause.address = { contains: query.address };
+  if (query.phoneNumber)
+    whereClause.phoneNumber = { contains: query.phoneNumber };
+  if (query.faxNumber) whereClause.faxNumber = { contains: query.faxNumber };
+  if (query.isShippingStopped !== undefined)
+    whereClause.isShippingStopped = query.isShippingStopped ?? undefined;
+
+  return whereClause;
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const prefectureCd = searchParams.get("prefectureCd");
-    const isShippingStopped = searchParams.get("isShippingStopped");
+    const query: ICustomerQuery = {
+      name: searchParams.get("name"),
+      prefectureCd: searchParams.get("prefectureCd"),
+      address: searchParams.get("address"),
+      phoneNumber: searchParams.get("phoneNumber"),
+      faxNumber: searchParams.get("faxNumber"),
+      isShippingStopped: parseBoolean(searchParams.get("isShippingStopped")),
+    };
 
-    const whereClause: ICustomerQuery = {};
-
-    if (prefectureCd) {
-      whereClause.prefectureCd = prefectureCd;
-    }
-
-    if (isShippingStopped !== null) {
-      whereClause.isShippingStopped = isShippingStopped === "true";
-    }
+    const whereClause = buildWhereClause(query);
 
     const customers = await prisma.customer.findMany({
-      where: {
-        isShippingStopped: whereClause.isShippingStopped ?? undefined,
-        prefectureCd: whereClause.prefectureCd ?? undefined,
-      },
+      where: whereClause,
     });
 
     return NextResponse.json(customers);
@@ -39,7 +55,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const body: Prisma.CustomerCreateInput = await request.json();
     const customer = await prisma.customer.create({
       data: body,
     });
@@ -55,7 +71,7 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   try {
-    const body = await request.json();
+    const body: Prisma.CustomerUncheckedUpdateInput[] = await request.json();
 
     if (!Array.isArray(body)) {
       return NextResponse.json(
@@ -66,15 +82,8 @@ export async function PUT(request: Request) {
 
     const updatePromises = body.map((customer) =>
       prisma.customer.update({
-        where: { id: customer.id },
-        data: {
-          name: customer.name,
-          prefectureCd: customer.prefectureCd,
-          address: customer.address,
-          phoneNumber: customer.phoneNumber,
-          faxNumber: customer.faxNumber,
-          isShippingStopped: customer.isShippingStopped,
-        },
+        where: { id: customer.id as number },
+        data: customer,
       })
     );
 

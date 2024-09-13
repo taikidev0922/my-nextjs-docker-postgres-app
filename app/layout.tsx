@@ -2,7 +2,7 @@ import React from "react";
 import "./globals.css";
 import "@mescius/wijmo.styles/wijmo.css";
 import { ScreenActionModeProvider } from "@/presentation/hooks/useScreenActionMode";
-import LayoutContent from "@/presentation/components/LayoutContent";
+import Link from "next/link";
 
 export default function RootLayout({
   children,
@@ -13,7 +13,16 @@ export default function RootLayout({
     <html lang="ja">
       <body>
         <ScreenActionModeProvider>
-          <LayoutContent />
+          <nav className="bg-gray-800 text-white p-4">
+            <ul className="flex space-x-4">
+              <li>
+                <Link href="/">ホーム</Link>
+              </li>
+              <li>
+                <Link href="/customers">得意先一覧</Link>
+              </li>
+            </ul>
+          </nav>
           <div>{children}</div>
         </ScreenActionModeProvider>
       </body>

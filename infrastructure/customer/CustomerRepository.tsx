@@ -1,20 +1,15 @@
 import { Customer } from "../../domain/customer/Customer";
 import { ICustomerQuery } from "../../domain/customer/ICustomerQuery";
 import { ICustomerRepository } from "../../domain/customer/ICustomerRepository";
+import { QueryBuilder } from "@/infrastructure/utils/QueryBuilder";
 
 export class CustomerRepository implements ICustomerRepository {
   async findAll(query: ICustomerQuery): Promise<Customer[]> {
     try {
-      const params = new URLSearchParams();
-      if (query.prefectureCd) params.append("prefectureCd", query.prefectureCd);
-      if (
-        query.isShippingStopped !== undefined &&
-        query.isShippingStopped !== null
-      ) {
-        params.append("isShippingStopped", query.isShippingStopped.toString());
-      }
+      const queryBuilder = new QueryBuilder<ICustomerQuery>(query);
+      const queryString = queryBuilder.toString();
 
-      const response = await fetch(`/api/customers?${params.toString()}`);
+      const response = await fetch(`/api/customers?${queryString}`);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);

@@ -1,23 +1,27 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { ICustomerQuery } from "@/domain/customer/ICustomerQuery";
 import { FetchCustomers } from "@/application/useCases/customer/fetchCustomers";
 import { CustomerRepository } from "@/infrastructure/customer/CustomerRepository";
 import { Customer } from "@/domain/customer/Customer";
-import { FlexGrid } from "@mescius/wijmo.react.grid";
 import { Accordion } from "@/presentation/components/Accordion";
-import {
-  useScreenActionMode,
-  ScreenActionMode,
-} from "@/presentation/hooks/useScreenActionMode";
+import { ScreenActionTemplate } from "@/presentation/template/ScreenActionTemplate";
+import { useScreenActionMode } from "@/presentation/hooks/useScreenActionMode";
+import { FlexGrid } from "@/presentation/components/FlexGrid";
+import { Button } from "@/presentation/components/Button";
+import { ComboBox } from "@mescius/wijmo.react.input";
 
 const schema = yup
   .object({
+    name: yup.string().nullable(),
     prefectureCd: yup.string().nullable(),
+    address: yup.string().nullable(),
+    phoneNumber: yup.string().nullable(),
+    faxNumber: yup.string().nullable(),
     isShippingStopped: yup
       .boolean()
       .transform((value) => {
@@ -32,23 +36,23 @@ const schema = yup
 
 export default function Page() {
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const { screenActionMode } = useScreenActionMode();
+  const { onChangeScreenActionMode } = useScreenActionMode();
   const {
     register,
     handleSubmit,
     formState: { errors },
+    control,
   } = useForm<ICustomerQuery>({
     resolver: yupResolver(schema),
   });
 
   const columns = [
-    { header: "ID", binding: "id", width: 110 },
-    { header: "名前", binding: "name", width: 250 },
-    { header: "都道府県", binding: "prefectureCd", width: 120 },
-    { header: "住所", binding: "address", width: 300 },
-    { header: "電話番号", binding: "phoneNumber", width: 150 },
-    { header: "FAX番号", binding: "faxNumber", width: 150 },
-    { header: "出荷停止", binding: "isShippingStopped", width: 100 },
+    { header: "名前", binding: "name" },
+    { header: "都道府県", binding: "prefectureCd" },
+    { header: "住所", binding: "address" },
+    { header: "電話番号", binding: "phoneNumber" },
+    { header: "FAX番号", binding: "faxNumber" },
+    { header: "出荷停止", binding: "isShippingStopped" },
   ];
 
   const fetchCustomers = async (query: ICustomerQuery = {}) => {
@@ -59,23 +63,40 @@ export default function Page() {
 
   useEffect(() => {
     fetchCustomers();
+
+    onChangeScreenActionMode(() => {
+      setCustomers([]);
+    });
   }, []);
 
   const onSubmit = (data: ICustomerQuery) => {
     fetchCustomers(data);
   };
 
-  const isReadOnly = screenActionMode === ScreenActionMode.ReadOnly;
-
   return (
-    <div className="min-h-screen">
+    <ScreenActionTemplate>
       <Accordion title="検索項目">
-        <form onSubmit={handleSubmit(onSubmit)} className="mb-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="mb-4" noValidate>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            <div className="flex flex-col">
+              <label htmlFor="name">得意先名</label>
+              <Controller
+                name="name"
+                control={control}
+                render={({ field }) => (
+                  <ComboBox
+                    id="name"
+                    textChanged={(sender) => {
+                      field.onChange(sender.text);
+                    }}
+                  />
+                )}
+              />
+            </div>
             <div>
               <label
                 htmlFor="prefectureCd"
-                className="block mb-2 font-medium text-gray-700"
+                className="block mb-1 font-medium text-gray-700"
               >
                 都道府県
               </label>
@@ -85,16 +106,53 @@ export default function Page() {
                 type="text"
                 className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-              {errors.prefectureCd && (
-                <p className="text-red-500 text-sm mt-1">
-                  {errors.prefectureCd.message}
-                </p>
-              )}
+            </div>
+            <div>
+              <label
+                htmlFor="address"
+                className="block mb-1 font-medium text-gray-700"
+              >
+                住所
+              </label>
+              <input
+                {...register("address")}
+                id="address"
+                type="text"
+                className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="phoneNumber"
+                className="block mb-1 font-medium text-gray-700"
+              >
+                電話番号
+              </label>
+              <input
+                {...register("phoneNumber")}
+                id="phoneNumber"
+                type="text"
+                className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="faxNumber"
+                className="block mb-1 font-medium text-gray-700"
+              >
+                FAX番号
+              </label>
+              <input
+                {...register("faxNumber")}
+                id="faxNumber"
+                type="text"
+                className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
             </div>
             <div>
               <label
                 htmlFor="isShippingStopped"
-                className="block mb-2 font-medium text-gray-700"
+                className="block mb-1 font-medium text-gray-700"
               >
                 出荷停止
               </label>
@@ -107,45 +165,24 @@ export default function Page() {
                 <option value="true">停止中</option>
                 <option value="false">出荷可</option>
               </select>
-              {errors.isShippingStopped && (
-                <p className="text-red-500 text-sm mt-1">
-                  {errors.isShippingStopped.message}
-                </p>
-              )}
             </div>
           </div>
-          <div className="mt-4">
-            <button
-              type="submit"
-              className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-md transition-colors duration-200"
-            >
+          {Object.keys(errors).length > 0 && (
+            <div className="mt-2 text-sm text-red-500">
+              入力内容に誤りがあります。ご確認ください。
+            </div>
+          )}
+          <div className="mt-6 flex justify-center">
+            <Button type="submit" className="w-1/2 max-w-md">
               検索
-            </button>
+            </Button>
           </div>
         </form>
       </Accordion>
 
       <Accordion title="検索結果">
-        <div className="overflow-x-auto">
-          <FlexGrid
-            itemsSource={customers}
-            columns={columns}
-            style={{ height: 600 }}
-            isReadOnly={isReadOnly}
-          />
-        </div>
-        <button
-          type="button"
-          className={`px-6 py-2 rounded-md mt-4 transition-colors duration-200 ${
-            isReadOnly
-              ? "bg-gray-400 text-gray-200 cursor-not-allowed"
-              : "bg-green-500 hover:bg-green-600 text-white"
-          }`}
-          disabled={isReadOnly}
-        >
-          更新
-        </button>
+        <FlexGrid columns={columns} itemsSource={customers} />
       </Accordion>
-    </div>
+    </ScreenActionTemplate>
   );
 }
