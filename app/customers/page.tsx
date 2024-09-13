@@ -13,7 +13,7 @@ import { Accordion } from "@/presentation/components/Accordion";
 import {
   useScreenActionMode,
   ScreenActionMode,
-} from "@/presentation/hooks/useScreenActionMode"; // パスは実際の構造に合わせて調整してください
+} from "@/presentation/hooks/useScreenActionMode";
 
 const schema = yup
   .object({
@@ -30,7 +30,7 @@ const schema = yup
   })
   .required();
 
-export default function CustomersPage() {
+export default function Page() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const { screenActionMode } = useScreenActionMode();
   const {
