@@ -14,6 +14,7 @@
     "@mescius/wijmo.react.all": "^5.20241.19",
     "@prisma/client": "5.19.1",
     "class-variance-authority": "^0.7.0",
+    "lodash": "^4.17.21",
     "lucide-react": "^0.439.0",
     "next": "14.2.8",
     "react": "^18",
@@ -22,6 +23,7 @@
     "yup": "^1.4.0"
   },
   "devDependencies": {
+    "@types/lodash": "^4.17.7",
     "@types/node": "^20.16.5",
     "@types/react": "^18",
     "@types/react-dom": "^18",

@@ -1,4 +1,5 @@
-"use clinet";
+"use client";
+
 import React, { useRef, useEffect, useState, useCallback } from "react";
 import {
   FlexGrid as WjFlexGrid,
@@ -8,13 +9,29 @@ import { FlexGrid as FlexGridClass } from "@mescius/wijmo.grid";
 import { DataType } from "@mescius/wijmo";
 import { FlexGridFilter, FilterType } from "@mescius/wijmo.grid.filter";
 import { useScreenActionMode } from "../hooks/useScreenActionMode";
+import LoadingWrapper from "./LoadingWrapper";
 
-interface FlexGridProps {
-  itemsSource: any[];
-  columns: any[];
+type CustomColumn = {
+  header: string;
+  binding: string;
+  width?: number;
+  dataType?: DataType;
+  cssClass?: string;
+  allowSorting?: boolean;
+  isReadOnly?: boolean;
+};
+
+interface FlexGridProps<T> {
+  itemsSource: T[];
+  columns: CustomColumn[];
+  pending: boolean;
 }
 
-export function FlexGrid({ itemsSource, columns }: FlexGridProps) {
+export function FlexGrid<T>({
+  itemsSource,
+  columns,
+  pending,
+}: FlexGridProps<T>) {
   const gridRef = useRef<HTMLDivElement>(null);
   const [gridHeight, setGridHeight] = useState(600);
   const { isReadOnly } = useScreenActionMode();
@@ -74,18 +91,18 @@ export function FlexGrid({ itemsSource, columns }: FlexGridProps) {
   }, [updateGridHeight, debouncedUpdateGridHeight]);
 
   const init = (grid: FlexGridClass) => {
-    let filter = new FlexGridFilter(grid);
-    var nonefilter = filter.getColumnFilter("isSelected");
+    const filter = new FlexGridFilter(grid);
+    const nonefilter = filter.getColumnFilter("isSelected");
     nonefilter.filterType = FilterType.None;
 
-    grid.itemsSourceChanged.addHandler((_, e) => {
+    grid.itemsSourceChanged.addHandler(() => {
       grid.collectionView.items.forEach((item) => {
         item.isSelected = false;
       });
     });
   };
 
-  const rowHeaders = [
+  const rowHeaders: CustomColumn[] = [
     {
       header: " ",
       binding: "isSelected",
@@ -96,7 +113,7 @@ export function FlexGrid({ itemsSource, columns }: FlexGridProps) {
     },
   ];
 
-  const extendedColumns = rowHeaders.concat(
+  const extendedColumns: CustomColumn[] = rowHeaders.concat(
     columns.map((column) => ({
       ...column,
       isReadOnly: isReadOnly,
@@ -105,17 +122,19 @@ export function FlexGrid({ itemsSource, columns }: FlexGridProps) {
 
   return (
     <div ref={gridRef}>
-      <WjFlexGrid
-        initialized={init}
-        itemsSource={itemsSource}
-        columns={extendedColumns}
-        style={{ height: gridHeight }}
-      >
-        <FlexGridCellTemplate
-          cellType="RowHeader"
-          template={(context) => context.row.index + 1}
-        />
-      </WjFlexGrid>
+      <LoadingWrapper pending={pending} spinnerSize="lg">
+        <WjFlexGrid
+          initialized={init}
+          itemsSource={itemsSource}
+          columns={extendedColumns}
+          style={{ height: gridHeight }}
+        >
+          <FlexGridCellTemplate
+            cellType="RowHeader"
+            template={(context) => context.row.index + 1}
+          />
+        </WjFlexGrid>
+      </LoadingWrapper>
     </div>
   );
 }

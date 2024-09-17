@@ -1,5 +1,6 @@
 import React, { ButtonHTMLAttributes } from "react";
 import { VariantProps, cva } from "class-variance-authority";
+import LoadingWrapper from "./LoadingWrapper";
 
 const buttonVariants = cva(
   "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none",
@@ -33,16 +34,21 @@ const buttonVariants = cva(
 
 export interface ButtonProps
   extends ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {}
+    VariantProps<typeof buttonVariants> {
+  pending?: boolean;
+}
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, ...props }, ref) => {
+  ({ className, variant, size, pending = false, ...props }, ref) => {
     return (
-      <button
-        className={buttonVariants({ variant, size, className })}
-        ref={ref}
-        {...props}
-      />
+      <LoadingWrapper pending={pending} spinnerSize="sm">
+        <button
+          className={buttonVariants({ variant, size, className })}
+          ref={ref}
+          disabled={pending || props.disabled}
+          {...props}
+        />
+      </LoadingWrapper>
     );
   }
 );
