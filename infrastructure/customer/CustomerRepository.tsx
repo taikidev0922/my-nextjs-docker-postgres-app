@@ -2,6 +2,7 @@ import { Customer } from "../../domain/customer/Customer";
 import { ICustomerQuery } from "../../domain/customer/ICustomerQuery";
 import { ICustomerRepository } from "../../domain/customer/ICustomerRepository";
 import { QueryBuilder } from "@/infrastructure/utils/QueryBuilder";
+import { BulkCustomerCommand } from "@/application/useCases/customer/BulkCustomerCommand";
 
 export class CustomerRepository implements ICustomerRepository {
   async findAll(query: ICustomerQuery): Promise<Customer[]> {
@@ -23,9 +24,9 @@ export class CustomerRepository implements ICustomerRepository {
     }
   }
 
-  async bulkUpdate(customers: Customer[]): Promise<void> {
+  async bulkUpdate(customers: BulkCustomerCommand[]): Promise<void> {
     try {
-      const response = await fetch("/api/customers/bulk-update", {
+      const response = await fetch("/api/customers", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

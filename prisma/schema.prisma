@@ -8,13 +8,34 @@ datasource db {
 }
 
 model Customer {
-  id              Int      @id @default(autoincrement())
-  name            String
-  prefectureCd    String
-  address         String
-  phoneNumber     String
-  faxNumber       String?
-  isShippingStopped Boolean @default(false)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id                Int      @id @default(autoincrement())
+  name              String
+  prefectureCd      String
+  address           String
+  phoneNumber       String
+  faxNumber         String?
+  isShippingStopped Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model Control {
+  id           Int             @id @default(autoincrement())
+  controlCd    String          @unique
+  controlName  String
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  controlDetails ControlDetail[]
+}
+
+model ControlDetail {
+  id        Int      @id @default(autoincrement())
+  controlId Int
+  cd        String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  control   Control  @relation(fields: [controlId], references: [id])
+
+  @@unique([controlId, cd])
 }

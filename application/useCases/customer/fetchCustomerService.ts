@@ -2,7 +2,7 @@ import { ICustomerRepository } from "../../../domain/customer/ICustomerRepositor
 import { Customer } from "../../../domain/customer/Customer";
 import { ICustomerQuery } from "../../../domain/customer/ICustomerQuery";
 
-export class FetchCustomers {
+export class FetchCustomerService {
   constructor(private customerRepository: ICustomerRepository) {}
 
   async execute(query: ICustomerQuery): Promise<Customer[]> {

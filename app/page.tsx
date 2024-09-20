@@ -1,7 +1,6 @@
-"use client";
 import React from "react";
 import { DashboardCard } from "../presentation/shared/DashboardCard";
-import { Users, Package, FileText, List, Info } from "lucide-react";
+import { Users, Package, FileText, List, Info, Settings } from "lucide-react";
 
 export default function Page() {
   return (
@@ -17,31 +16,50 @@ export default function Page() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          <DashboardCard
-            title="得意先管理"
-            description="顧客情報の登録・編集・閲覧が可能です。"
-            icon={Users}
-            href="/customers"
-          />
-          <DashboardCard
-            title="商品管理"
-            description="商品の登録・編集・在庫管理を一括で行えます。"
-            icon={Package}
-            href="/products"
-          />
-          <DashboardCard
-            title="受注入力"
-            description="新規受注の登録と編集を簡単に行えます。"
-            icon={FileText}
-            href="/orders/new"
-          />
-          <DashboardCard
-            title="受注一覧"
-            description="全ての受注情報を一覧で確認・管理できます。"
-            icon={List}
-            href="/orders"
-          />
+        <div className="mb-12">
+          <h2 className="text-2xl font-semibold text-gray-800 mb-6">
+            マスタ管理
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <DashboardCard
+              title="得意先マスタ管理"
+              description="顧客情報の登録・編集・閲覧が可能です。"
+              icon={Users}
+              href="/customers"
+            />
+            <DashboardCard
+              title="商品マスタ管理"
+              description="商品の登録・編集・在庫管理を一括で行えます。"
+              icon={Package}
+              href="/products"
+            />
+            <DashboardCard
+              title="制御マスタ管理"
+              description="システムの制御を行うマスタの登録・編集・閲覧が可能です。"
+              icon={Settings}
+              href="/controls"
+            />
+          </div>
+        </div>
+
+        <div className="mb-12">
+          <h2 className="text-2xl font-semibold text-gray-800 mb-6">
+            受注管理
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <DashboardCard
+              title="受注入力"
+              description="新規受注の登録と編集を簡単に行えます。"
+              icon={FileText}
+              href="/orders/new"
+            />
+            <DashboardCard
+              title="受注一覧"
+              description="全ての受注情報を一覧で確認・管理できます。"
+              icon={List}
+              href="/orders"
+            />
+          </div>
         </div>
 
         <div className="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 rounded-lg shadow-md flex items-start">

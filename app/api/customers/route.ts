@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { PrismaClient, Prisma } from "@prisma/client";
 import { ICustomerQuery } from "@/domain/customer/ICustomerQuery";
+import { BulkCustomerCommand } from "@/application/useCases/customer/BulkCustomerCommand";
 
 const prisma = new PrismaClient();
 
@@ -53,45 +54,60 @@ export async function GET(request: Request) {
   }
 }
 
-export async function POST(request: Request) {
-  try {
-    const body: Prisma.CustomerCreateInput = await request.json();
-    const customer = await prisma.customer.create({
-      data: body,
-    });
-    return NextResponse.json(customer);
-  } catch (error) {
-    console.error("Error creating customer:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
-  }
-}
-
 export async function PUT(request: Request) {
   try {
-    const body: Prisma.CustomerUncheckedUpdateInput[] = await request.json();
+    const body: BulkCustomerCommand[] = await request.json();
 
     if (!Array.isArray(body)) {
       return NextResponse.json(
-        { error: "Invalid input: expected an array of customers" },
+        { error: "Invalid input: expected an array of customer operations" },
         { status: 400 }
       );
     }
 
-    const updatePromises = body.map((customer) =>
-      prisma.customer.update({
-        where: { id: customer.id as number },
-        data: customer,
-      })
-    );
+    const results = await prisma.$transaction(async (prisma) => {
+      const operations = body.map(async (item) => {
+        if (item.operation === "save") {
+          if (item.id) {
+            // 更新
+            return prisma.customer.update({
+              where: { id: item.id },
+              data: {
+                name: item.name,
+                prefectureCd: item.prefectureCd,
+                address: item.address,
+                phoneNumber: item.phoneNumber,
+                faxNumber: item.faxNumber,
+                isShippingStopped: item.isShippingStopped,
+              },
+            });
+          } else {
+            // 新規登録
+            return prisma.customer.create({
+              data: {
+                name: item.name!,
+                prefectureCd: item.prefectureCd!,
+                address: item.address,
+                phoneNumber: item.phoneNumber,
+                faxNumber: item.faxNumber,
+                isShippingStopped: item.isShippingStopped,
+              },
+            });
+          }
+        } else if (item.operation === "delete" && item.id) {
+          // 削除
+          return prisma.customer.delete({
+            where: { id: item.id },
+          });
+        }
+      });
 
-    const updatedCustomers = await prisma.$transaction(updatePromises);
+      return Promise.all(operations);
+    });
 
-    return NextResponse.json(updatedCustomers);
+    return NextResponse.json(results);
   } catch (error) {
-    console.error("Error updating customers:", error);
+    console.error("Error processing customer operations:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 }

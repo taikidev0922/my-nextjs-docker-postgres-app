@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import {
   useScreenActionMode,
   ScreenActionMode,
@@ -14,7 +13,7 @@ export function ScreenActionTemplate({
 }: {
   children: React.ReactNode;
 }) {
-  const { screenActionMode, setScreenActionMode, isEditable } =
+  const { screenActionMode, setScreenActionMode, isEditable, onClickUpdate } =
     useScreenActionMode();
 
   return (
@@ -38,7 +37,11 @@ export function ScreenActionTemplate({
               </label>
             ))}
           </div>
-          <Button variant="success" disabled={!isEditable}>
+          <Button
+            variant="success"
+            disabled={!isEditable}
+            onClick={onClickUpdate}
+          >
             更新
           </Button>
         </div>

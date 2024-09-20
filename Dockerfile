@@ -1,7 +1,7 @@
-FROM node:18-alpine AS base
+FROM node:18-slim AS base
 
 # Install Git and other dependencies
-RUN apk add --no-cache git libc6-compat
+RUN apt-get update && apt-get install -y git
 
 WORKDIR /app
 
@@ -39,8 +39,8 @@ WORKDIR /app
 ENV NODE_ENV production
 ENV NEXT_TELEMETRY_DISABLED 1
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+RUN groupadd --gid 1001 nodejs
+RUN useradd --uid 1001 --gid nodejs --shell /bin/bash --create-home nextjs
 
 COPY --from=builder /app/next.config.mjs ./
 COPY --from=builder /app/prisma ./prisma

@@ -1,37 +1,38 @@
 "use client";
 
-import React, { useRef, useEffect, useState, useCallback } from "react";
+import { useRef, useEffect, useState, useCallback, useMemo } from "react";
 import {
   FlexGrid as WjFlexGrid,
   FlexGridCellTemplate,
 } from "@mescius/wijmo.react.grid";
 import { FlexGrid as FlexGridClass } from "@mescius/wijmo.grid";
 import { DataType } from "@mescius/wijmo";
-import { FlexGridFilter, FilterType } from "@mescius/wijmo.grid.filter";
 import { useScreenActionMode } from "../hooks/useScreenActionMode";
 import LoadingWrapper from "./LoadingWrapper";
+import { CustomColumn } from "../hooks/useFlexGrid";
+import { GridActionButton } from "@/presentation/components/GridActionButton";
 
-type CustomColumn = {
-  header: string;
-  binding: string;
-  width?: number;
-  dataType?: DataType;
-  cssClass?: string;
-  allowSorting?: boolean;
-  isReadOnly?: boolean;
-};
-
-interface FlexGridProps<T> {
-  itemsSource: T[];
+interface FlexGridProps {
   columns: CustomColumn[];
-  pending: boolean;
+  pending?: boolean;
+  fixedHeight?: number;
+  addRow: () => void;
+  removeRow: () => void;
+  copyRow: () => void;
+  resetFilter: () => void;
 }
 
-export function FlexGrid<T>({
-  itemsSource,
+export function FlexGrid({
   columns,
   pending,
-}: FlexGridProps<T>) {
+  fixedHeight,
+  setGridRef,
+  addRow,
+  removeRow,
+  copyRow,
+  resetFilter,
+  ...props
+}: FlexGridProps & { setGridRef: (grid: FlexGridClass) => void }) {
   const gridRef = useRef<HTMLDivElement>(null);
   const [gridHeight, setGridHeight] = useState(600);
   const { isReadOnly } = useScreenActionMode();
@@ -40,7 +41,7 @@ export function FlexGrid<T>({
     if (gridRef.current) {
       const gridTop = gridRef.current.getBoundingClientRect().top;
       const windowHeight = window.innerHeight;
-      const newHeight = windowHeight - gridTop - 25;
+      const newHeight = windowHeight - gridTop - 70;
       setGridHeight(Math.max(newHeight, 100));
     }
   }, []);
@@ -48,7 +49,6 @@ export function FlexGrid<T>({
   const debouncedUpdateGridHeight = useCallback(() => {
     setTimeout(() => {
       updateGridHeight();
-      // アニメーション完了後に再度調整
       setTimeout(updateGridHeight, 200);
     }, 50);
   }, [updateGridHeight]);
@@ -75,7 +75,6 @@ export function FlexGrid<T>({
       subtree: true,
     });
 
-    // トランジション終了イベントのリスナーを追加
     const transitionEndListener = (event: TransitionEvent) => {
       if (event.propertyName === "height") {
         updateGridHeight();
@@ -90,44 +89,65 @@ export function FlexGrid<T>({
     };
   }, [updateGridHeight, debouncedUpdateGridHeight]);
 
-  const init = (grid: FlexGridClass) => {
-    const filter = new FlexGridFilter(grid);
-    const nonefilter = filter.getColumnFilter("isSelected");
-    nonefilter.filterType = FilterType.None;
-
-    grid.itemsSourceChanged.addHandler(() => {
-      grid.collectionView.items.forEach((item) => {
-        item.isSelected = false;
-      });
-    });
-  };
-
-  const rowHeaders: CustomColumn[] = [
-    {
-      header: " ",
-      binding: "isSelected",
-      dataType: DataType.Boolean,
-      width: 50,
-      cssClass: "wj-header",
-      allowSorting: false,
+  const init = useCallback(
+    (grid: FlexGridClass) => {
+      setGridRef(grid);
     },
-  ];
+    [setGridRef]
+  );
 
-  const extendedColumns: CustomColumn[] = rowHeaders.concat(
-    columns.map((column) => ({
-      ...column,
-      isReadOnly: isReadOnly,
-    }))
+  const rowHeaders: CustomColumn[] = useMemo(
+    () => [
+      {
+        header: " ",
+        binding: "isSelected",
+        dataType: DataType.Boolean,
+        width: 40,
+        cssClass: "wj-header",
+        allowSorting: false,
+      },
+      {
+        header: " ",
+        binding: "operationIcon",
+        dataType: DataType.String,
+        width: 40,
+        cssClass: "wj-header",
+        allowSorting: false,
+        cellTemplate(context) {
+          if (!context.item.isSelected) {
+            return "";
+          }
+          if (context.item.operation === "delete") {
+            return `<span class="text-white">D</span>`;
+          }
+          return `<span class="text-white">${
+            context.item.id ? "U" : "I"
+          }</span>`;
+        },
+      },
+    ],
+    []
+  );
+
+  const extendedColumns: CustomColumn[] = useMemo(
+    () =>
+      rowHeaders.concat(
+        columns.map((column) => ({
+          ...column,
+          isReadOnly: isReadOnly,
+        }))
+      ),
+    [rowHeaders, columns, isReadOnly]
   );
 
   return (
     <div ref={gridRef}>
-      <LoadingWrapper pending={pending} spinnerSize="lg">
+      <LoadingWrapper pending={pending ?? false} spinnerSize="lg">
         <WjFlexGrid
           initialized={init}
-          itemsSource={itemsSource}
           columns={extendedColumns}
-          style={{ height: gridHeight }}
+          style={{ height: fixedHeight ?? gridHeight }}
+          {...props}
         >
           <FlexGridCellTemplate
             cellType="RowHeader"
@@ -135,6 +155,12 @@ export function FlexGrid<T>({
           />
         </WjFlexGrid>
       </LoadingWrapper>
+      <div className="flex space-x-2">
+        <GridActionButton type="add" onClick={addRow} />
+        <GridActionButton type="remove" onClick={removeRow} />
+        <GridActionButton type="copy" onClick={copyRow} />
+        <GridActionButton type="filter" onClick={resetFilter} />
+      </div>
     </div>
   );
 }

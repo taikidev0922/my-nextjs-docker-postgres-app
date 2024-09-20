@@ -10,7 +10,8 @@
         "esbenp.prettier-vscode",
         "prisma.prisma",
         "github.copilot",
-        "bradlc.vscode-tailwindcss"
+        "bradlc.vscode-tailwindcss",
+        "formulahendry.auto-close-tag"
       ]
     }
   },

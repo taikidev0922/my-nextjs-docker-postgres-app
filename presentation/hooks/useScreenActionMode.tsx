@@ -1,11 +1,5 @@
 "use client";
-import React, {
-  createContext,
-  useContext,
-  useState,
-  ReactNode,
-  useCallback,
-} from "react";
+import React, { createContext, useContext, useState, ReactNode } from "react";
 
 export enum ScreenActionMode {
   ReadOnly = "READ_ONLY",
@@ -35,11 +29,19 @@ type ScreenActionModeContextType = {
   isReadOnly: boolean;
   isEditable: boolean;
   onChangeScreenActionMode: (callback: ChangeCallback) => void;
+  onUpdate: (handler: () => void) => void;
+  onClickUpdate: () => void;
 };
 
-const ScreenActionModeContext = createContext<
-  ScreenActionModeContextType | undefined
->(undefined);
+const ScreenActionModeContext = createContext<ScreenActionModeContextType>({
+  screenActionMode: ScreenActionMode.ReadOnly,
+  setScreenActionMode: () => {},
+  isReadOnly: true,
+  isEditable: false,
+  onChangeScreenActionMode: () => {},
+  onUpdate: () => {},
+  onClickUpdate: () => {},
+});
 
 export const ScreenActionModeProvider: React.FC<{ children: ReactNode }> = ({
   children,
@@ -49,36 +51,46 @@ export const ScreenActionModeProvider: React.FC<{ children: ReactNode }> = ({
   const [changeCallback, setChangeCallback] = useState<ChangeCallback | null>(
     null
   );
+  const [updateHandler, setUpdateHandler] = useState<(() => void) | null>(null);
 
-  const setScreenActionMode = useCallback(
-    (newMode: ScreenActionMode) => {
-      setScreenActionModeState((prevMode) => {
-        if (changeCallback) {
-          changeCallback(prevMode, newMode);
-        }
-        return newMode;
-      });
-    },
-    [changeCallback]
-  );
+  function setScreenActionMode(newMode: ScreenActionMode) {
+    setScreenActionModeState((prevMode) => {
+      if (changeCallback) {
+        changeCallback(prevMode, newMode);
+      }
+      return newMode;
+    });
+  }
 
-  const onChangeScreenActionMode = useCallback((callback: ChangeCallback) => {
+  function onClickUpdate() {
+    if (updateHandler) {
+      updateHandler();
+    }
+  }
+
+  function onChangeScreenActionMode(callback: ChangeCallback) {
     setChangeCallback(() => callback);
-  }, []);
+  }
+
+  function onUpdate(handler: () => void) {
+    setUpdateHandler(() => handler);
+  }
 
   const isReadOnly = screenActionMode === ScreenActionMode.ReadOnly;
   const isEditable = editableScreenActionModes.includes(screenActionMode);
 
+  const contextValue: ScreenActionModeContextType = {
+    screenActionMode,
+    setScreenActionMode,
+    isReadOnly,
+    isEditable,
+    onChangeScreenActionMode,
+    onUpdate,
+    onClickUpdate,
+  };
+
   return (
-    <ScreenActionModeContext.Provider
-      value={{
-        screenActionMode,
-        setScreenActionMode,
-        isReadOnly,
-        isEditable,
-        onChangeScreenActionMode,
-      }}
-    >
+    <ScreenActionModeContext.Provider value={contextValue}>
       {children}
     </ScreenActionModeContext.Provider>
   );
@@ -86,7 +98,7 @@ export const ScreenActionModeProvider: React.FC<{ children: ReactNode }> = ({
 
 export const useScreenActionMode = () => {
   const context = useContext(ScreenActionModeContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error(
       "useScreenActionMode must be used within a ScreenActionModeProvider"
     );
