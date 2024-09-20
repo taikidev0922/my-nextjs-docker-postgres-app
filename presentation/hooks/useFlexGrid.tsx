@@ -6,7 +6,7 @@ import {
 } from "@mescius/wijmo.grid";
 import { DataType, CollectionView } from "@mescius/wijmo";
 import { FlexGridFilter, FilterType } from "@mescius/wijmo.grid.filter";
-import { cloneDeep } from "lodash";
+import { cloneDeep, has, assign } from "lodash";
 
 export type CustomColumn = {
   header: string;
@@ -44,7 +44,10 @@ export function useFlexGrid<T>(initialColumns: CustomColumn[]) {
         cell.style.backgroundColor = "";
         if (c == 1) {
           cell.style.textAlign = "center";
-          if (grid.collectionView.items[r].operation === "delete") {
+          if (
+            grid.collectionView.items[r].isSelected &&
+            grid.collectionView.items[r].operation === "delete"
+          ) {
             cell.style.backgroundColor = "#ff0000";
           } else if (grid.collectionView.items[r].isSelected) {
             cell.style.backgroundColor = grid.collectionView.items[r].id
@@ -59,6 +62,9 @@ export function useFlexGrid<T>(initialColumns: CustomColumn[]) {
   }
 
   function getSelectedItems(): T[] {
+    gridRef.current?.collectionView?.items?.forEach((item, index) => {
+      item.cookie = index;
+    });
     return (
       gridRef.current?.collectionView?.items.filter(
         (item) => item.isSelected
@@ -77,6 +83,13 @@ export function useFlexGrid<T>(initialColumns: CustomColumn[]) {
   }
 
   function removeRow() {
+    if (gridRef.current?.collectionView.currentItem.id) {
+      gridRef.current.beginUpdate();
+      gridRef.current.collectionView.currentItem.operation = "delete";
+      gridRef.current.collectionView.currentItem.isSelected = true;
+      gridRef.current.endUpdate();
+      return;
+    }
     gridRef.current?.editableCollectionView.remove(
       gridRef.current.collectionView.currentItem
     );
@@ -89,6 +102,38 @@ export function useFlexGrid<T>(initialColumns: CustomColumn[]) {
       id: null,
       isSelected: true,
     });
+  }
+
+  function getOperation(item: T): "save" | "delete" {
+    if (
+      has(item, "operation") &&
+      (item["operation"] === "delete" || item["operation"] === "save")
+    ) {
+      return item["operation"] as "save" | "delete";
+    }
+    return "save";
+  }
+
+  function getCookie(item: T): number {
+    if (has(item, "cookie")) {
+      return item["cookie"] as number;
+    }
+    return 0;
+  }
+
+  function applyResults(results: (T & { cookie: number })[]) {
+    gridRef.current?.beginUpdate();
+    results.forEach((result) => {
+      const item = gridRef.current?.collectionView.items.find(
+        (item) => item.cookie === result.cookie
+      );
+      if (item) {
+        assign(item, result);
+        item.operation = null;
+        item.isSelected = false;
+      }
+    });
+    gridRef.current?.endUpdate();
   }
 
   function resetFilter() {}
@@ -113,5 +158,8 @@ export function useFlexGrid<T>(initialColumns: CustomColumn[]) {
     copyRow,
     resetFilter,
     setItemsSource,
+    getOperation,
+    getCookie,
+    applyResults,
   };
 }

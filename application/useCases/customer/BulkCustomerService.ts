@@ -1,9 +1,12 @@
 import { ICustomerRepository } from "@/domain/customer/ICustomerRepository";
 import { BulkCustomerCommand } from "./BulkCustomerCommand";
+import { Customer } from "@/domain/customer/Customer";
 export class BulkCustomerService {
   constructor(private readonly customerRepository: ICustomerRepository) {}
 
-  execute(selectedItems: BulkCustomerCommand[]) {
-    this.customerRepository.bulkUpdate(selectedItems);
+  async execute(
+    selectedItems: BulkCustomerCommand[]
+  ): Promise<(Customer & { cookie: number })[]> {
+    return await this.customerRepository.bulkUpdate(selectedItems);
   }
 }

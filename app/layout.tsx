@@ -3,6 +3,7 @@ import "./globals.css";
 import "@mescius/wijmo.styles/wijmo.css";
 import { ScreenActionModeProvider } from "@/presentation/hooks/useScreenActionMode";
 import Link from "next/link";
+import { Toaster } from "react-hot-toast";
 
 export default function RootLayout({
   children,
@@ -12,6 +13,7 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <body>
+        <Toaster />
         <ScreenActionModeProvider>
           <nav className="bg-gray-800 text-white p-4">
             <ul className="flex space-x-4">

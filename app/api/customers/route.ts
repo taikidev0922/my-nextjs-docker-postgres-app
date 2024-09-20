@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { PrismaClient, Prisma } from "@prisma/client";
+import { PrismaClient, Prisma, Customer } from "@prisma/client";
 import { ICustomerQuery } from "@/domain/customer/ICustomerQuery";
 import { BulkCustomerCommand } from "@/application/useCases/customer/BulkCustomerCommand";
 
@@ -67,39 +67,47 @@ export async function PUT(request: Request) {
 
     const results = await prisma.$transaction(async (prisma) => {
       const operations = body.map(async (item) => {
+        let result: Customer | null = null;
+
         if (item.operation === "save") {
+          const data = {
+            name: item.name,
+            prefectureCd: item.prefectureCd,
+            address: item.address,
+            phoneNumber: item.phoneNumber,
+            faxNumber: item.faxNumber,
+            isShippingStopped: item.isShippingStopped,
+          };
+
           if (item.id) {
-            // 更新
-            return prisma.customer.update({
+            // Update
+            result = await prisma.customer.update({
               where: { id: item.id },
-              data: {
-                name: item.name,
-                prefectureCd: item.prefectureCd,
-                address: item.address,
-                phoneNumber: item.phoneNumber,
-                faxNumber: item.faxNumber,
-                isShippingStopped: item.isShippingStopped,
-              },
+              data: data,
             });
           } else {
-            // 新規登録
-            return prisma.customer.create({
-              data: {
-                name: item.name!,
-                prefectureCd: item.prefectureCd!,
-                address: item.address,
-                phoneNumber: item.phoneNumber,
-                faxNumber: item.faxNumber,
-                isShippingStopped: item.isShippingStopped,
-              },
+            // Create new
+            result = await prisma.customer.create({
+              data: data as Prisma.CustomerCreateInput,
             });
           }
         } else if (item.operation === "delete" && item.id) {
-          // 削除
-          return prisma.customer.delete({
+          // Delete
+          result = await prisma.customer.delete({
             where: { id: item.id },
           });
         }
+
+        if (!result) {
+          throw new Error(
+            `Invalid operation or missing data for item: ${JSON.stringify(
+              item
+            )}`
+          );
+        }
+
+        // Add cookie to the result
+        return { ...result, cookie: item.cookie };
       });
 
       return Promise.all(operations);

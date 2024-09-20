@@ -24,7 +24,9 @@ export class CustomerRepository implements ICustomerRepository {
     }
   }
 
-  async bulkUpdate(customers: BulkCustomerCommand[]): Promise<void> {
+  async bulkUpdate(
+    customers: BulkCustomerCommand[]
+  ): Promise<(Customer & { cookie: number })[]> {
     try {
       const response = await fetch("/api/customers", {
         method: "PUT",
@@ -37,6 +39,9 @@ export class CustomerRepository implements ICustomerRepository {
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
+
+      const data = await response.json();
+      return data;
     } catch (error) {
       console.error("Error bulk updating customers:", error);
       throw error;

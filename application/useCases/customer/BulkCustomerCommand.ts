@@ -1,4 +1,5 @@
 export class BulkCustomerCommand {
+  cookie: number;
   id?: number;
   name?: string;
   prefectureCd?: string;
@@ -9,6 +10,7 @@ export class BulkCustomerCommand {
   operation: "save" | "delete";
 
   constructor(data: {
+    cookie: number;
     id?: number;
     name?: string;
     prefectureCd?: string;
@@ -18,6 +20,7 @@ export class BulkCustomerCommand {
     isShippingStopped?: boolean;
     operation: "save" | "delete";
   }) {
+    this.cookie = data.cookie;
     this.id = data.id;
     this.name = data.name;
     this.prefectureCd = data.prefectureCd;
