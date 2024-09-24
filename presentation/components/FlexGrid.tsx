@@ -47,7 +47,7 @@ export function FlexGrid({
     if (gridRef.current) {
       const gridTop = gridRef.current.getBoundingClientRect().top;
       const windowHeight = window.innerHeight;
-      const newHeight = windowHeight - gridTop - 70;
+      const newHeight = windowHeight - gridTop - 90;
       setGridHeight(Math.max(newHeight, 100));
     }
   }, []);
@@ -162,6 +162,9 @@ export function FlexGrid({
                   )
                 : "",
             click(_e, ctx) {
+              if (!ctx.item.results || ctx.item.results.length === 0) {
+                return;
+              }
               setIsResultsDialogPresent(true);
               setResults(ctx.item.results);
             },

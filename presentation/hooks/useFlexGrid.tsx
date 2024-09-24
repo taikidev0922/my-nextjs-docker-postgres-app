@@ -23,6 +23,7 @@ export type CustomColumn = {
 export function useFlexGrid<T>(initialColumns: CustomColumn[]) {
   const gridRef = useRef<FlexGridClass | null>(null);
   const [currentItem, setCurrentItem] = useState<T | null>(null);
+  const [filter, setFilter] = useState<FlexGridFilter | null>(null);
 
   function setGridRef(grid: FlexGridClass) {
     gridRef.current = grid;
@@ -32,9 +33,11 @@ export function useFlexGrid<T>(initialColumns: CustomColumn[]) {
     gridRef.current.selectionChanged.addHandler(() => {
       setCurrentItem(gridRef.current?.collectionView?.currentItem);
     });
-    const filter = new FlexGridFilter(grid);
-    const nonefilter = filter.getColumnFilter("isSelected");
-    nonefilter.filterType = FilterType.None;
+    setFilter(new FlexGridFilter(grid));
+    const nonefilter = filter?.getColumnFilter("isSelected");
+    if (nonefilter) {
+      nonefilter.filterType = FilterType.None;
+    }
     grid.autoGenerateColumns = false;
 
     grid.itemsSourceChanged.addHandler(() => {
@@ -147,7 +150,9 @@ export function useFlexGrid<T>(initialColumns: CustomColumn[]) {
     gridRef.current?.endUpdate();
   }
 
-  function resetFilter() {}
+  function resetFilter() {
+    filter?.clear();
+  }
 
   function register() {
     return {

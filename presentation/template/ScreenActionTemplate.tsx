@@ -6,7 +6,7 @@ import {
   screenActionModeLabels,
   screenActionModeColors,
 } from "@/presentation/hooks/useScreenActionMode";
-import { Button } from "../components/Button";
+import { Button } from "@/presentation/components/ui/button";
 
 export function ScreenActionTemplate({
   children,
@@ -38,9 +38,9 @@ export function ScreenActionTemplate({
             ))}
           </div>
           <Button
-            variant="success"
             disabled={!isEditable}
             onClick={onClickUpdate}
+            variant="success"
           >
             更新
           </Button>

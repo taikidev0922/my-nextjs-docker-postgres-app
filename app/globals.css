@@ -60,6 +60,11 @@ body {
   }
 }
 
+.wj-flexgrid .wj-cell .wj-cell-maker .error-icon {
+  stroke: #ffffff !important;
+  fill: #ef4444 !important;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -170,16 +175,4 @@ body {
   body {
     @apply bg-background text-foreground;
   }
-}
-
-.wj-flexgrid .wj-cell .wj-cell-maker .error-icon {
-  stroke: #ffffff !important;
-  fill: #ef4444 !important;
-}
-
-.wj-header.wj-state-multi-selected {
-  background-color: #eee !important;
-}
-.wj-header.wj-state-selected {
-  background-color: #eee !important;
 }
