@@ -6,11 +6,15 @@ import {
   FlexGridCellTemplate,
 } from "@mescius/wijmo.react.grid";
 import { FlexGrid as FlexGridClass } from "@mescius/wijmo.grid";
+import { CellMaker } from "@mescius/wijmo.grid.cellmaker";
 import { DataType } from "@mescius/wijmo";
 import { useScreenActionMode } from "../hooks/useScreenActionMode";
 import LoadingWrapper from "./LoadingWrapper";
 import { CustomColumn } from "../hooks/useFlexGrid";
 import { GridActionButton } from "@/presentation/components/GridActionButton";
+import { CircleX } from "lucide-react";
+import ReactDOMServer from "react-dom/server";
+import { ResultsDialogButton } from "./ResultsDialogButton";
 
 interface FlexGridProps {
   columns: CustomColumn[];
@@ -35,6 +39,8 @@ export function FlexGrid({
 }: FlexGridProps & { setGridRef: (grid: FlexGridClass) => void }) {
   const gridRef = useRef<HTMLDivElement>(null);
   const [gridHeight, setGridHeight] = useState(600);
+  const [isResultsDialogPresent, setIsResultsDialogPresent] = useState(false);
+  const [results, setResults] = useState([]);
   const { isReadOnly } = useScreenActionMode();
 
   const updateGridHeight = useCallback(() => {
@@ -45,6 +51,21 @@ export function FlexGrid({
       setGridHeight(Math.max(newHeight, 100));
     }
   }, []);
+
+  const getDataType = (dataType: string): DataType => {
+    switch (dataType) {
+      case "boolean":
+        return DataType.Boolean;
+      case "string":
+        return DataType.String;
+      case "number":
+        return DataType.Number;
+      case "date":
+        return DataType.Date;
+      default:
+        return DataType.String;
+    }
+  };
 
   const debouncedUpdateGridHeight = useCallback(() => {
     setTimeout(() => {
@@ -101,7 +122,7 @@ export function FlexGrid({
       {
         header: " ",
         binding: "isSelected",
-        dataType: DataType.Boolean,
+        dataType: "boolean",
         width: 40,
         cssClass: "wj-header",
         allowSorting: false,
@@ -109,7 +130,7 @@ export function FlexGrid({
       {
         header: " ",
         binding: "operationIcon",
-        dataType: DataType.String,
+        dataType: "string",
         width: 40,
         cssClass: "wj-header",
         allowSorting: false,
@@ -118,25 +139,56 @@ export function FlexGrid({
             return "";
           }
           if (context.item.operation === "delete") {
-            return `<span class="text-white">D</span>`;
+            return `<span class="text-red-500">D</span>`;
           }
-          return `<span class="text-white">${
-            context.item.id ? "U" : "I"
-          }</span>`;
+          return `<span class="${
+            context.item.id ? "text-green-500" : "text-blue-500"
+          }">${context.item.id ? "U" : "I"}</span>`;
+        },
+      },
+      {
+        header: " ",
+        binding: "results",
+        dataType: "string",
+        width: 40,
+        cssClass: "wj-header",
+        allowSorting: false,
+        cellTemplate(ctx, cell) {
+          return CellMaker.makeButton({
+            text:
+              ctx.item.results && ctx.item.results.length > 0
+                ? ReactDOMServer.renderToString(
+                    <CircleX className="error-icon" />
+                  )
+                : "",
+            click(_e, ctx) {
+              setIsResultsDialogPresent(true);
+              setResults(ctx.item.results);
+            },
+            attributes: {
+              tabindex: -1,
+            },
+          })(ctx, cell);
         },
       },
     ],
     []
   );
 
-  const extendedColumns: CustomColumn[] = useMemo(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const extendedColumns: any[] = useMemo(
     () =>
-      rowHeaders.concat(
-        columns.map((column) => ({
+      rowHeaders
+        .concat(
+          columns.map((column) => ({
+            ...column,
+            isReadOnly: isReadOnly,
+          }))
+        )
+        .map((column) => ({
           ...column,
-          isReadOnly: isReadOnly,
-        }))
-      ),
+          dataType: getDataType(column.dataType),
+        })),
     [rowHeaders, columns, isReadOnly]
   );
 
@@ -161,6 +213,11 @@ export function FlexGrid({
         <GridActionButton type="copy" onClick={copyRow} />
         <GridActionButton type="filter" onClick={resetFilter} />
       </div>
+      <ResultsDialogButton
+        isPresent={isResultsDialogPresent}
+        results={results}
+        onClose={() => setIsResultsDialogPresent(false)}
+      />
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { ICustomerQuery } from "../../domain/customer/ICustomerQuery";
 import { ICustomerRepository } from "../../domain/customer/ICustomerRepository";
 import { QueryBuilder } from "@/infrastructure/utils/QueryBuilder";
 import { BulkCustomerCommand } from "@/application/useCases/customer/BulkCustomerCommand";
+import { BulkResult } from "@/domain/common/BulkResult";
 
 export class CustomerRepository implements ICustomerRepository {
   async findAll(query: ICustomerQuery): Promise<Customer[]> {
@@ -26,7 +27,7 @@ export class CustomerRepository implements ICustomerRepository {
 
   async bulkUpdate(
     customers: BulkCustomerCommand[]
-  ): Promise<(Customer & { cookie: number })[]> {
+  ): Promise<(Customer & BulkResult)[]> {
     try {
       const response = await fetch("/api/customers", {
         method: "PUT",
@@ -35,10 +36,6 @@ export class CustomerRepository implements ICustomerRepository {
         },
         body: JSON.stringify(customers),
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
 
       const data = await response.json();
       return data;

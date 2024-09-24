@@ -4,15 +4,16 @@ import {
   CellType,
   ICellTemplateFunction,
 } from "@mescius/wijmo.grid";
-import { DataType, CollectionView } from "@mescius/wijmo";
+import { CollectionView } from "@mescius/wijmo";
 import { FlexGridFilter, FilterType } from "@mescius/wijmo.grid.filter";
 import { cloneDeep, has, assign } from "lodash";
+import { BulkResult } from "@/domain/common/BulkResult";
 
 export type CustomColumn = {
   header: string;
   binding: string;
   width?: number;
-  dataType?: DataType;
+  dataType: "string" | "number" | "boolean" | "date";
   cssClass?: string;
   allowSorting?: boolean;
   isReadOnly?: boolean;
@@ -25,6 +26,9 @@ export function useFlexGrid<T>(initialColumns: CustomColumn[]) {
 
   function setGridRef(grid: FlexGridClass) {
     gridRef.current = grid;
+    grid.initialize({
+      itemsSource: [],
+    });
     gridRef.current.selectionChanged.addHandler(() => {
       setCurrentItem(gridRef.current?.collectionView?.currentItem);
     });
@@ -41,24 +45,12 @@ export function useFlexGrid<T>(initialColumns: CustomColumn[]) {
 
     grid.itemFormatter = function (panel, r, c, cell) {
       if (panel.cellType == CellType.Cell) {
-        cell.style.backgroundColor = "";
         if (c == 1) {
           cell.style.textAlign = "center";
-          if (
-            grid.collectionView.items[r].isSelected &&
-            grid.collectionView.items[r].operation === "delete"
-          ) {
-            cell.style.backgroundColor = "#ff0000";
-          } else if (grid.collectionView.items[r].isSelected) {
-            cell.style.backgroundColor = grid.collectionView.items[r].id
-              ? "#66ff33"
-              : "#3366ff";
-          } else {
-            cell.style.backgroundColor = "";
-          }
         }
       }
     };
+    grid.select(0, 3);
   }
 
   function getSelectedItems(): T[] {
@@ -79,18 +71,22 @@ export function useFlexGrid<T>(initialColumns: CustomColumn[]) {
   }
 
   function addRow() {
-    (gridRef.current?.collectionView as CollectionView).addNew();
+    (gridRef.current?.collectionView as CollectionView)?.addNew();
   }
 
   function removeRow() {
-    if (gridRef.current?.collectionView.currentItem.id) {
+    if (gridRef.current?.collectionView?.currentItem?.id) {
       gridRef.current.beginUpdate();
-      gridRef.current.collectionView.currentItem.operation = "delete";
-      gridRef.current.collectionView.currentItem.isSelected = true;
+      const currentOperation =
+        gridRef.current.collectionView.currentItem.operation;
+      gridRef.current.collectionView.currentItem.operation =
+        currentOperation === "delete" ? null : "delete";
+      gridRef.current.collectionView.currentItem.isSelected =
+        currentOperation === "delete" ? false : true;
       gridRef.current.endUpdate();
       return;
     }
-    gridRef.current?.editableCollectionView.remove(
+    gridRef.current?.editableCollectionView?.remove(
       gridRef.current.collectionView.currentItem
     );
   }
@@ -121,18 +117,33 @@ export function useFlexGrid<T>(initialColumns: CustomColumn[]) {
     return 0;
   }
 
-  function applyResults(results: (T & { cookie: number })[]) {
-    gridRef.current?.beginUpdate();
-    results.forEach((result) => {
-      const item = gridRef.current?.collectionView.items.find(
-        (item) => item.cookie === result.cookie
-      );
-      if (item) {
-        assign(item, result);
-        item.operation = null;
-        item.isSelected = false;
-      }
+  function applyResults(responses: (T & BulkResult)[]) {
+    gridRef.current?.collectionView.items.forEach((item) => {
+      item.results = [];
     });
+    gridRef.current?.beginUpdate();
+    if (responses.some((response) => response.results.length > 0)) {
+      responses.forEach((response) => {
+        const item = gridRef.current?.collectionView.items.find(
+          (item) => item.cookie === response.cookie
+        );
+        item.results = response.results;
+      });
+    } else {
+      responses.forEach((response) => {
+        const item = gridRef.current?.collectionView.items.find(
+          (item) => item.cookie === response.cookie
+        );
+
+        if (getOperation(item) === "delete") {
+          gridRef.current?.editableCollectionView.remove(item);
+        } else if (item) {
+          assign(item, response);
+          item.operation = null;
+          item.isSelected = false;
+        }
+      });
+    }
     gridRef.current?.endUpdate();
   }
 

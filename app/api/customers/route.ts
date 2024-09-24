@@ -65,53 +65,84 @@ export async function PUT(request: Request) {
       );
     }
 
-    const results = await prisma.$transaction(async (prisma) => {
-      const operations = body.map(async (item) => {
-        let result: Customer | null = null;
+    const results = await Promise.all(
+      body.map(async (item) => {
+        try {
+          let result: Customer | null = null;
 
-        if (item.operation === "save") {
-          const data = {
-            name: item.name,
-            prefectureCd: item.prefectureCd,
-            address: item.address,
-            phoneNumber: item.phoneNumber,
-            faxNumber: item.faxNumber,
-            isShippingStopped: item.isShippingStopped,
-          };
+          if (item.operation === "save") {
+            const data = {
+              name: item.name,
+              prefectureCd: item.prefectureCd,
+              address: item.address,
+              phoneNumber: item.phoneNumber,
+              faxNumber: item.faxNumber,
+              isShippingStopped: item.isShippingStopped,
+            };
 
-          if (item.id) {
-            // Update
-            result = await prisma.customer.update({
+            if (item.id) {
+              // Update
+              result = await prisma.customer.update({
+                where: { id: item.id },
+                data: data,
+              });
+            } else {
+              // Create new
+              result = await prisma.customer.create({
+                data: data as Prisma.CustomerCreateInput,
+              });
+            }
+          } else if (item.operation === "delete" && item.id) {
+            // Delete
+            result = await prisma.customer.delete({
               where: { id: item.id },
-              data: data,
-            });
-          } else {
-            // Create new
-            result = await prisma.customer.create({
-              data: data as Prisma.CustomerCreateInput,
             });
           }
-        } else if (item.operation === "delete" && item.id) {
-          // Delete
-          result = await prisma.customer.delete({
-            where: { id: item.id },
-          });
+
+          if (!result) {
+            throw new Error(
+              `Invalid operation or missing data for item: ${JSON.stringify(
+                item
+              )}`
+            );
+          }
+
+          // Add cookie to the result
+          return { ...result, cookie: item.cookie, results: [] };
+        } catch (error) {
+          if (error instanceof Prisma.PrismaClientKnownRequestError) {
+            if (error.code === "P2002") {
+              // Unique constraint violation
+              return {
+                ...item,
+                results: [
+                  { message: "得意先名が重複しています", status: "error" },
+                ],
+              };
+            }
+          }
+          // For other errors, return a generic error message
+          return {
+            ...item,
+            results: [
+              {
+                message: "An error occurred while processing this item",
+                status: "error",
+              },
+            ],
+          };
         }
+      })
+    );
 
-        if (!result) {
-          throw new Error(
-            `Invalid operation or missing data for item: ${JSON.stringify(
-              item
-            )}`
-          );
-        }
+    // Check if any operation resulted in an error
+    const hasErrors = results.some(
+      (result) => result.results && result.results.length > 0
+    );
 
-        // Add cookie to the result
-        return { ...result, cookie: item.cookie };
-      });
-
-      return Promise.all(operations);
-    });
+    if (hasErrors) {
+      return NextResponse.json(results, { status: 422 });
+    }
 
     return NextResponse.json(results);
   } catch (error) {
